@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/thuypq123/golang_feature_first.git
+    repoURL: https://github.com/thuypq123/gitops-repo.git
     targetRevision: main
-    path: deployments/k8s/overlays/dev
+    path: apps/backend/overlays/dev
   destination:
     server: https://kubernetes.default.svc
     namespace: dev
