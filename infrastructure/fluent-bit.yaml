@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  namespace: dev
+  labels:
+    app: fluent-bit
+spec:
+  selector:
+    matchLabels:
+      app: fluent-bit
+  template:
+    metadata:
+      labels:
+        app: fluent-bit
+    spec:
+      containers:
+        - name: fluent-bit
+          image: cr.fluentbit.io/fluent/fluent-bit:3.1.4
+          ports:
+            - containerPort: 2020
+              name: http
+          volumeMounts:
+            - name: config
+              mountPath: /fluent-bit/etc/
+            - name: varlog
+              mountPath: /var/log
+            - name: varlibdocker
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+      volumes:
+        - name: config
+          configMap:
+            name: fluent-bit-config
+        - name: varlog
+          hostPath:
+            path: /var/log
+        - name: varlibdocker
+          hostPath:
+            path: /var/lib/docker/containers
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: dev
+  labels:
+    app: fluent-bit
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        flush           5
+        log_level       info
+        parsers_file    parsers.conf
+
+    [INPUT]
+        name            tail
+        path            /var/log/containers/*.log
+        multiline.parser docker
+        tag             kube.*
+        mem_buf_limit    50MB
+        skip_long_lines  on
+
+    [FILTER]
+        name            kubernetes
+        match           kube.*
+        merge_log       on
+        keep_log        on
+        use_tag_for_meta true
+
+    [FILTER]
+        name            nest
+        match           kube.*
+        operation       lift
+        nested_under    kubernetes
+
+    [OUTPUT]
+        name            loki
+        match           *
+        host            loki-service
+        port            3100
+        labels          job=fluentbit
+        label_keys      $namespace_name,$pod_name,$container_name
+
+  parsers.conf: |
+    [PARSER]
+        name        docker
+        format      json
+        time_key    time
+        time_format %Y-%m-%dT%H:%M:%S.%L

@@ -1,0 +1,14 @@
+resources:
+  - postgres.yaml
+  - redis.yaml
+  - ingress-backend.yaml
+  - ingress-argocd.yaml
+  - ingress-grafana.yaml
+  - prometheus.yaml
+  - grafana.yaml
+  - tempo.yaml
+  - loki.yaml
+  - otel-collector.yaml
+  - fluent-bit.yaml
+commonLabels:
+  managed-by: argocd
