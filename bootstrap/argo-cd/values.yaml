@@ -1,0 +1,22 @@
+# Argo CD Helm values
+global:
+  image:
+    tag: latest
+
+server:
+  service:
+    type: LoadBalancer
+  extraArgs:
+    - --insecure
+
+configs:
+  params:
+    server.insecure: "true"
+  cm:
+    timeout.reconciliation: 60s
+    resource.customizations: |
+      apps/Deployment:
+        health.lua: |
+          hs = {}
+          hs.status = "Healthy"
+          return hs

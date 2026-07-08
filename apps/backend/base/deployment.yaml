@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  labels:
+    app: payment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+        - name: payment-service
+          image: thuypq123/payment-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: ENV
+              value: "development"
+            - name: PAYMENT_DB_HOST
+              value: "payment-postgres-service"
+            - name: PAYMENT_DB_PORT
+              value: "5432"
+            - name: PAYMENT_DB_USERNAME
+              value: "postgres"
+            - name: PAYMENT_DB_PASSWORD
+              value: "postgres"
+            - name: PAYMENT_DB_DATABASE
+              value: "payment_service_dev"
+            - name: PAYMENT_REDIS_HOST
+              value: "payment-redis-service"
+            - name: PAYMENT_REDIS_PORT
+              value: "6379"
+            - name: PAYMENT_KAFKA_BROKERS
+              value: "payment-kafka-service:9092"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
